@@ -4,7 +4,8 @@ import RegisterView from '../views/auth/RegisterView.vue'
 import FeedView from '../views/FeedView.vue'
 import ProfilePage from '@/views/ProfilePage.vue'
 import AuthOTPView from '@/views/auth/AuthOTPView.vue'
-import AppLayout from '@/views/layouts/app.vue'
+import AppLayout from '@/views/layouts/AppLayout.vue'
+import { useAuthStore } from '@/stores/auth'
 import axios from 'axios'
 
 const getCurrentUsername = async () => {
@@ -61,7 +62,7 @@ const router = createRouter({
       component: AppLayout,
       children: [
         {
-          path: '',
+          path: '/',
           component: FeedView,
         },
       ],
@@ -90,18 +91,14 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
+  const authStore = useAuthStore()
 
-  if (requiresAuth) {
-    axios
-      .get(`${import.meta.env.VITE_API_URL}/me`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-        },
-      })
-      .then(() => next())
-      .catch(() => next({ name: 'Login' }))
+  await authStore.checkAuth()
+
+  if (requiresAuth && !authStore.isAuthenticated) {
+    next({ name: 'Login' })
   } else {
     next()
   }

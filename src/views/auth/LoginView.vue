@@ -7,6 +7,7 @@ import type { LoginResponse, ErrorResponse } from '../../types'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { decodeJWT } from '@/utils/decodeJWT'
 import {
   Card,
   CardContent,
@@ -30,6 +31,7 @@ import { useForm } from 'vee-validate'
 import { h } from 'vue'
 import * as z from 'zod'
 import { RouterLink } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const error = ref<string>('')
 const token = ref<string>('')
@@ -58,7 +60,11 @@ const onSubmit = handleSubmit(async (values) => {
     token.value = response.data.data
     error.value = ''
     // set local storage
+    const decoded = decodeJWT(token.value)
     localStorage.setItem('authToken', response.data.data) // Or sessionStorage
+    localStorage.setItem('userID_cache', decoded?.user_id?.toString() || '')
+
+    useAuthStore()
     router.push('/')
   } catch (err) {
     const axiosError = err as AxiosError<ErrorResponse>

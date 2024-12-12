@@ -31,8 +31,7 @@ const fetchUserProfile = async () => {
     followerCount.value = data.FollowersCount
     followingCount.value = data.FollowingCount
   } catch (err) {
-    console.error(err)
-    error.value = err.response?.data?.error || 'An error occurred'
+    error.value = 'An error occurred'
   } finally {
     loading.value = false
   }
@@ -49,7 +48,7 @@ const followUser = async () => {
     isFollowing.value = true
     followerCount.value += 1
   } catch (err) {
-    error.value = err.response?.data?.error || 'An error occurred'
+    error.value = 'An error occurred'
   }
 }
 

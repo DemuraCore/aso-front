@@ -4,6 +4,7 @@ export interface User {
   DeletedAt: string | null
   ID: number
   Username: string
+  Name: string
   Email: string
   FollowingCount: number
   FollowersCount: number

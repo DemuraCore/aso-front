@@ -22,6 +22,15 @@ module.exports = {
       },
     },
     extend: {
+      keyframes: {
+        'slide-out-left': {
+          '0%': { transform: 'translateX(0)', opacity: 1 },
+          '100%': { transform: 'translateX(-100%)', opacity: 0 },
+        },
+      },
+      animation: {
+        'slide-out-left': 'slide-out-left 2s ease-out forwards',
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',

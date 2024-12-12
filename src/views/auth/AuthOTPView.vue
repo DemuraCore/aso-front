@@ -23,6 +23,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { PinInput, PinInputGroup, PinInputInput } from '@/components/ui/pin-input'
 
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
@@ -33,10 +34,12 @@ const successMessage = ref<string>('')
 
 const otpCode = ref<string>('')
 const showOtpInput = ref<boolean>(false)
+const loading = ref<boolean>(false)
 const router = useRouter()
 
 const sendOTP = async () => {
   const token = localStorage.getItem('authToken')
+  loading.value = true
   try {
     await axios.post(
       `${import.meta.env.VITE_API_URL}/verify/send-code`,
@@ -58,26 +61,30 @@ const sendOTP = async () => {
     } else {
       error.value = 'An error occurred while sending OTP.'
     }
+  } finally {
+    loading.value = false
   }
 }
 
 const otpSchema = toTypedSchema(
   z.object({
-    otp: z.string().min(4, 'OTP must be at least 4 characters long'),
+    pin: z.array(z.coerce.string()).length(5, { message: 'Invalid input' }),
   }),
 )
 
-const { handleSubmit } = useForm({
+const { handleSubmit, setFieldValue } = useForm({
   validationSchema: otpSchema,
 })
 
-const verifyOTP = handleSubmit(async (values) => {
+const verifyOTP = handleSubmit(async ({ pin }) => {
+  console.log('verifyOTP called with pin:', pin)
   const token = localStorage.getItem('authToken')
+  loading.value = true
   try {
     await axios.post(
       `${import.meta.env.VITE_API_URL}/verify/verify-email`,
       {
-        code: values.otp,
+        code: pin.join(''),
       },
       {
         headers: {
@@ -96,6 +103,8 @@ const verifyOTP = handleSubmit(async (values) => {
     } else {
       error.value = 'An error occurred during OTP verification.'
     }
+  } finally {
+    loading.value = false
   }
 })
 </script>
@@ -109,34 +118,60 @@ const verifyOTP = handleSubmit(async (values) => {
       </CardHeader>
       <CardContent class="grid gap-4">
         <div class="grid gap-2">
-          <Button v-if="!showOtpInput" @click="sendOTP" class="w-full"> Send OTP </Button>
+          <Button v-if="!showOtpInput" @click="sendOTP" class="w-full" :disabled="loading">
+            <span v-if="loading">Loading...</span>
+            <span v-else>Send OTP</span>
+          </Button>
           <Button
             v-if="!showOtpInput"
             @click="showOtpInput = true"
             variant="outline"
             class="w-full"
+            :disabled="loading"
           >
             Already have code?
           </Button>
-          <form v-if="showOtpInput" @submit.prevent="verifyOTP" class="space-y-6">
-            <FormField v-slot="{ componentField }" name="otp">
+          <form v-if="showOtpInput" @submit="verifyOTP" class="space-y-6">
+            <FormField v-slot="{ componentField, value }" name="pin ">
               <FormItem>
                 <FormLabel>OTP Code</FormLabel>
                 <FormControl>
-                  <Input
-                    id="otp"
-                    v-model="otpCode"
-                    required
-                    v-bind="componentField"
-                    placeholder="OTP Code"
-                  />
+                  <PinInput
+                    id="pin-input"
+                    :model-value="value"
+                    placeholder="○"
+                    class="flex gap-2 items-center mt-1"
+                    type="text"
+                    :name="componentField.name"
+                    @update:model-value="
+                      (arrStr) => {
+                        setFieldValue('pin', arrStr.filter(Boolean))
+                      }
+                    "
+                    ><PinInputGroup>
+                      <PinInputInput
+                        v-for="(id, index) in 5"
+                        :key="id"
+                        :index="index"
+                      /> </PinInputGroup
+                  ></PinInput>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             </FormField>
-            <Button type="submit" class="w-full"> Verify </Button>
-            <Button type="button" @click="sendOTP" variant="outline" class="w-full">
-              Resend OTP
+            <Button class="w-full" :disabled="loading">
+              <span v-if="loading">Loading...</span>
+              <span v-else>Verify</span>
+            </Button>
+            <Button
+              type="button"
+              @click="sendOTP"
+              variant="outline"
+              class="w-full"
+              :disabled="loading"
+            >
+              <span v-if="loading">Loading...</span>
+              <span v-else>Resend OTP</span>
             </Button>
             <RouterLink to="/">
               <Button

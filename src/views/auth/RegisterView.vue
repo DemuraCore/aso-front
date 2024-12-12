@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import axios, { AxiosError } from 'axios'
 import { useRouter } from 'vue-router'
 import type { RegisterResponse, ErrorResponse } from '../../types'
+import { decodeJWT } from '@/utils/decodeJWT'
 
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -66,8 +67,10 @@ const onSubmit = handleSubmit(async (values) => {
         password: values.password,
       },
     )
+    const decoded = decodeJWT(response.data.token)
     // set local storage
     localStorage.setItem('authToken', response.data.token) // Or sessionStorage
+    localStorage.setItem('userID_cache', decoded?.user_id?.toString() || '')
     router.push('/auth/otp')
   } catch (err) {
     const axiosError = err as AxiosError<ErrorResponse>
